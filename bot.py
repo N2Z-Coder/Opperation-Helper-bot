@@ -111,8 +111,16 @@ def main():
         MessageHandler(filters.TEXT & ~filters.COMMAND, prompt_handler)
     )
 
-    print("AI Bot is running...")
-    app.run_polling()
+    
+print("AI Bot is running...")
+
+threading.Thread(
+    target=run_web_server,
+    daemon=True
+).start()
+
+app.run_polling()
+
 
 if __name__ == "__main__":
     main()
