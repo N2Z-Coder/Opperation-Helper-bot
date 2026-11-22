@@ -1,4 +1,12 @@
 
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+import os
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+AGNES_API_KEY = os.getenv("AGNES_API_KEY")
+
 import os
 from dotenv import load_dotenv
 from telegram import (
