@@ -1,4 +1,5 @@
-
+from openai import OpenAI
+import asyncio
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -17,7 +18,12 @@ from telegram.ext import (
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+AGNES_API_KEY = os.getenv("AGNES_API_KEY")
 
+client = OpenAI(
+    api_key=AGNES_API_KEY,
+    base_url="https://apihub.agnes-ai.com/v1"
+)
 
 # Health check server
 class HealthHandler(BaseHTTPRequestHandler):
@@ -76,20 +82,59 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # Prompt handler
+
 async def prompt_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     mode = context.user_data.get("mode")
 
     if not mode:
-        await update.message.reply_text("Please choose Image or Video using /start.")
+        await update.message.reply_text(
+            "Please choose Image or Video using /start."
+        )
         return
 
     prompt = update.message.text
     context.user_data["mode"] = None
 
-    await update.message.reply_text(
-        f"✅ {mode.upper()} prompt received!\n\n"
-        f"Prompt: {prompt}\n\n"
-        "⏳ AI generation will be connected soon."
+    if mode == "image":
+        if not AGNES_API_KEY:
+            await update.message.reply_text("Agnes API Key is missing!")
+            return
+
+        msg = await update.message.reply_text(
+            " Generating your image... Please wait!"
+        )
+
+        try:
+            result = await asyncio.to_thread(
+                client.images.generate,
+                model="agnes-image-2.5-flash",
+                prompt=prompt,
+                size="1K",
+                extra_body={
+                    "ratio": "1:1",
+                    "response_format": "url"
+                }
+            )
+
+            image_url = result.data[0].url
+
+            await update.message.reply_photo(
+                photo=image_url,
+                caption=" Your AI Image is ready!"
+            )
+
+            await msg.delete()
+
+        except Exception as e:
+            await msg.edit_text(
+                f" Image generation failed:\n{str(e)[:800]}"
+            )
+
+    elif mode == "video":
+        await update.message.reply_text(
+            " Video API will be connected next!"
+        )
+"
     )
 
 
