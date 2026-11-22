@@ -98,6 +98,20 @@ async def cancel(
     context.user_data["mode"] = None
     await update.message.reply_text("❌ Request cancelled.")
 
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"AI Bot is running!")
+
+    def log_message(self, format, *args):
+        pass
+
+def run_web_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    server.serve_forever()
+
 def main():
     if not BOT_TOKEN:
         raise ValueError("BOT_TOKEN is missing!")
