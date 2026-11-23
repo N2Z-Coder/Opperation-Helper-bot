@@ -133,8 +133,7 @@ async def prompt_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif mode == "video":
         await update.message.reply_text(
             " Video API will be connected next!"
-        )
-    )
+          )
 
 
 # Cancel command
