@@ -247,10 +247,13 @@ async def generate_video(update: Update, prompt: str, mode: str, first_frame=Non
                     )
 
                 if attempt in (5, 15, 30, 45, 60, 75):
-                    await status_msg.edit_text(
-                        " Video is still generating...\n"
-                        "Please wait."
-                    )
+    try:
+        await status_msg.edit_text(
+            f"⏳ Video is still generating...\n"
+            f"Please wait. ({(attempt + 1) * 10} seconds)"
+        )
+    except Exception:
+        pass
 
             if not video_url:
                 raise Exception(
