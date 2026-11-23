@@ -195,14 +195,42 @@ async def generate_video(update: Update, prompt: str, mode: str, first_frame=Non
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as http:
-            # Create video task
-            response = await http.post(
-                f"{VIDEO_API}/v1/videos",
-                headers=headers,
-                json=payload,
-            )
-            response.raise_for_status()
-            result = response.json()
+            
+            # Create video task with automatic retry
+            result = None
+
+            for retry in range(5):
+                response = await http.post(
+                    f"{VIDEO_API}/v1/videos",
+                    headers=headers,
+                    json=payload,
+                )
+
+                if response.status_code == 503 and retry < 4:
+                    wait_time = 15 * (2 ** retry)
+
+                    try:
+                        await status_msg.edit_text(
+                            f"⚠️ Agnes Video Server is busy.\n"
+                            f"Retrying in {wait_time} seconds...\n"
+                            f"Attempt {retry + 2}/5"
+                        )
+                    except Exception:
+                        pass
+
+                    await asyncio.sleep(wait_time)
+                    continue
+
+                response.raise_for_status()
+                result = response.json()
+                break
+
+            if result is None:
+                raise Exception(
+                    f"Video server is still unavailable: "
+                    f"{response.text[:500]}"
+                )
+
 
             video_id = result.get("video_id") or result.get("id")
 
